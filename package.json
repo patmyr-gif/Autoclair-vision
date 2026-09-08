@@ -1,1 +1,14 @@
-{"name":"autoclair-vision-test","version":"1.0.0","private":true,"type":"commonjs","scripts":{"start":"node server.js"},"dependencies":{"express":"^5.1.0"},"engines":{"node":">=20"}}
+{"{
+  "name": "autoclair-vision",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "openai": "^5.12.2",
+    "sharp": "^0.34.3"
+  }
+} server.js"},"dependencies":{"express":"^5.1.0"},"engines":{"node":">=20"}}
