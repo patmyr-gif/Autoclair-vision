@@ -1,1 +1,783 @@
+<!DOCTYPE html>
+<html lang="fr"><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>Auto Clair V48 · Vision IA + OCR</title><style>body{margin:0;background:#f4f5f7;font-family:system-ui;color:#17202a}.app{max-width:430px;margin:auto;min-height:100vh;background:white}header{padding:20px;border-bottom:1px solid #ddd;position:sticky;top:0;background:white}.logo{font-weight:800;font-size:24px}.sub{font-size:12px;color:#68717c}.screen{display:none;padding:18px}.active{display:block}h1{font-size:25px}h2{font-size:19px}.muted{color:#68717c}.card{border:1px solid #e1e4e8;border-radius:16px;padding:15px;margin:12px 0}.alert{border-left:4px solid #e0a11a}.redline{border-left-color:#d34b4b}label{display:block;font-weight:650;font-size:13px;margin:13px 0 6px}input,textarea{width:100%;padding:12px;border:1px solid #ccd2d9;border-radius:11px;font:inherit;box-sizing:border-box}textarea{min-height:90px}button{border:0;border-radius:12px;padding:13px 15px;font-weight:700;cursor:pointer}.primary{width:100%;background:#17202a;color:#fff;margin-top:14px}.secondary{background:#eef0f3}.badge{display:inline-block;padding:5px 9px;border-radius:99px;font-size:12px;font-weight:750;background:#eef0f3}.orange{background:#fff1d8}.red{background:#ffe2e2}.green{background:#e4f5e8}.link,.back{background:none;color:#2457a6;padding:4px 0}.source{font-size:12px;color:#68717c;margin:8px 0}.devis{background:#fafafa;border:1px solid #ddd;border-radius:12px;padding:12px;font-size:12px}.line{display:flex;justify-content:space-between;border-bottom:1px solid #e6e6e6;padding:8px 0}.success{text-align:center;padding:45px 10px}</style><style>
+.tech-section {
+  background: #eaf2fb !important;
+  border: 2px solid #bfd3e8 !important;
+  border-radius: 18px !important;
+  padding: 14px !important;
+  margin: 14px 0 !important;
+}
+.price-section {
+  background: #fff1dc !important;
+  border: 2px solid #e6c99b !important;
+  border-radius: 18px !important;
+  padding: 14px !important;
+  margin: 14px 0 !important;
+}
+.section-label {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
+.tech-section .section-label { color: #315d82; }
+.price-section .section-label { color: #96630d; }
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.client-problem{background:#f4f5f7;border-radius:12px;padding:10px 12px;margin-bottom:4px}
+.compact-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #eef0f3;font-size:14px}
+.compact-row:last-of-type{border-bottom:none}
+.small{font-size:12px}
+.greenline{border-left:4px solid #55b94b}
+</style>
+<style>
+.extraction-field.detected{border-left:4px solid #55b94b}.extraction-field.missing{border-left:4px solid #e0a11a}.extraction-field .topbar label{flex:1}.extraction-field input{margin-top:8px}.extraction-field .badge{flex-shrink:0}
+summary{cursor:pointer}
+</style>
+<style>
+/* V15 — tableau tarifaire intégré */
+.price-table{margin:14px 0;border:1px solid #e6b15c;border-radius:16px;overflow:hidden;background:#fff1dc}
+.price-table-head,.price-table-row{display:grid;grid-template-columns:minmax(0,1.45fr) 72px minmax(125px,1fr) 20px;align-items:center;column-gap:10px}
+.price-table-head{padding:10px 12px;background:#f3b35a;color:#5a3508;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+.price-table-row{min-height:56px;padding:0 12px;border-top:1px solid #e7e9ec;font-size:16px}
+.price-table-row .item{font-weight:800;color:#17202a}
+.price-table-row .qty{font-weight:500;text-align:center;border-left:3px solid #55b94b;border-right:3px solid #55b94b;padding:6px 4px}
+.price-table-row .range{text-align:right;font-weight:500;white-space:nowrap}
+.price-table-row .dot{width:18px;height:18px;border-radius:50%;background:#55b94b;justify-self:end}
+.price-table-row .range-sep{display:none}
+.price-table-total{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:1px solid #e7e9ec;margin-top:12px;font-size:18px}
+@media(max-width:390px){.price-table-head,.price-table-row{grid-template-columns:minmax(0,1.35fr) 62px minmax(110px,1fr) 18px;column-gap:7px}.price-table-row{font-size:14px}.price-table-row .dot{width:16px;height:16px}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}</script>
+<body><div class="app"><header><div class="logo">AUTO CLAIR</div><div class="sub">Prototype V48 · Vision IA + OCR · extraction structurée</div></header>
+<section class="screen active" id="home">
+<h1>Commencez par votre devis.</h1>
+<p class="muted">Prenez une photo, sélectionnez vos photos de devis ou importez un PDF. Auto Clair commence par lire le document.</p>
 
+<div class="card">
+  <label>Votre devis</label>
+  <input id="quoteInput" accept="image/*,.pdf,application/pdf" type="file" multiple>
+  <div id="fileStatus" class="source">Aucun document sélectionné.</div>
+  <div class="source">📷 Photo · 🖼️ Galerie · 📑 PDF · plusieurs pages acceptées</div>
+  <button class="primary" id="analyzeDocumentBtn" onclick="analyzeDocument()" disabled>Analyser le devis</button>
+</div>
+
+<div class="card" style="background:#f7f8fa">
+  <b>Comment ça marche ?</b>
+  <p class="muted" style="margin-bottom:0">1. Vous fournissez le devis → 2. Auto Clair extrait les informations lisibles → 3. Vous vérifiez les informations détectées → 4. L’analyse commence.</p>
+</div>
+</section>
+
+<section class="screen" id="extraction">
+  <button class="back" onclick="show('home')">← Modifier le document</button>
+  <h1>Informations extraites</h1>
+  <p class="muted">Voici ce qu’Auto Clair a pu lire dans votre devis. <b>Tout reste modifiable avant validation.</b></p>
+  <div id="extraction-content"></div>
+  <button class="primary" onclick="validateExtraction()">Vérifier et continuer</button>
+</section>
+
+<div class="card" style="margin-top:18px;background:#f7f8fa"><b>🧪 Tests MVP — mode développement</b><p class="muted" style="margin:6px 0 10px">Choisis un dossier pour simuler un vrai dépôt client.</p><div style="display:grid;gap:8px"><button class="secondary" onclick="loadTest('01')">🟢 Test 01 — Cohérent</button><button class="secondary" onclick="loadTest('02')">🔴 Test 02 — Incohérent</button><button class="secondary" onclick="loadTest('03')">🟠 Test 03 — Ambigu</button><button class="secondary" onclick="loadTest('04')">💶 Test 04 — Tarifaire</button><button class="secondary" onclick="loadTest('05')">🧩 Test 05 — Complexe</button></div></div>
+<section class="screen" id="done"><div class="success"><span class="badge green">Dossier envoyé</span><h1>Votre dossier est bien reçu.</h1><p class="muted">Analyse en cours. Dans cette démo, passez directement à l'espace conseiller.</p><button class="primary" onclick="show('advisor')">Voir l'espace conseiller</button></div></section>
+<section class="screen" id="advisor">
+<div id="advisor-content"></div>
+<div class="card"><b>Principe Auto Clair</b><p class="muted">Une alerte est une observation, pas un verdict. Auto Clair ne certifie ni la pièce, ni le diagnostic, ni la nécessité de la réparation.</p></div>
+<h2>Mon analyse</h2><textarea id="advisor-note" placeholder="Écris ou dicte ici ton analyse…"></textarea><button class="primary" onclick="show('final')">Valider mon analyse</button></section>
+<section class="screen" id="technicalDetails"><button class="back" onclick="show('advisor')">← Retour au dossier</button><h1>Analyse technique détaillée</h1><div id="technical-details-content"></div><button class="primary" onclick="show('advisor')">Retour à l'analyse</button></section>
+<section class="screen" id="quote"><button class="back" onclick="show('advisor')">← Retour au dossier</button><h1>Devis original</h1><div class="devis" id="quote-content"></div><button class="primary" onclick="show('advisor')">Retour à mon analyse</button></section>
+<section class="screen" id="final"><div class="success"><span class="badge green">Analyse enregistrée</span><h1>Dossier prêt pour le rapport.</h1><p class="muted">Les alertes deviennent des éléments de rapport uniquement après ta validation.</p><button class="secondary" onclick="show('advisor')">Modifier mon analyse</button></div></section></div><script>
+const TESTS={
+'01':{id:'TEST-01',vehicle:'Renault Clio IV 1.5 dCi 90',year:'2016',mileage:'124 800 km',problem:'Voyant moteur allumé et perte de puissance à l’accélération.',garage:'GARAGE DU PARC',quote:'TEST-01',date:'Test',observations:'Diagnostic et interventions proposées en lien avec les symptômes. Test volontairement cohérent.',operations:[
+{id:'diag',label:'Diagnostic électronique',qty:1,ref:'DIAG-ELEC',unit:55,total:55,status:'green',title:'Diagnostic électronique',reason:'Le diagnostic correspond directement au voyant moteur et à la perte de puissance.'},
+{id:'egr',label:'Nettoyage vanne EGR',qty:1,ref:'EGR-CLEAN',unit:120,total:120,status:'green',title:'Nettoyage vanne EGR',reason:'Intervention compatible avec un problème de fonctionnement moteur et une perte de puissance.'},
+{id:'air',label:'Remplacement filtre à air',qty:1,ref:'FILT-AIR',unit:28,total:28,status:'green',title:'Filtre à air',reason:'Intervention d’entretien pouvant participer au bon fonctionnement moteur.'},
+{id:'labor',label:'Main-d’œuvre mécanique',qty:2,unit:'h',ref:'MO',unitPrice:68,total:136,status:'green',title:'Main-d’œuvre',reason:'2 h sont cohérentes avec plusieurs opérations simples.'}],
+tariff:[['Diagnostic électronique',55,'45–80 €','green'],['Nettoyage vanne EGR',120,'80–160 €','green'],['Filtre à air',28,'20–45 €','green'],['Main-d’œuvre · 2 h',136,'100–160 €','green']],globalRange:'300–470 €',tariffStatus:'green',ht:339,vat:67.80,ttc:406.80},
+'02':{id:'TEST-02',vehicle:'Peugeot 208 1.2 PureTech 82',year:'2018',mileage:'92 300 km',problem:'Bruit sourd à l’avant lors du passage sur les ralentisseurs.',garage:'GARAGE DES ALIZES',quote:'TEST-02',date:'Test',observations:'Le kit de distribution est volontairement sans lien apparent avec le symptôme déclaré.',operations:[
+{id:'shock',label:'Amortisseur avant',qty:2,ref:'AMO-AV',unit:145,total:290,status:'green',title:'Amortisseurs avant',reason:'Des amortisseurs avant sont compatibles avec un bruit lors du passage sur des ralentisseurs.'},
+{id:'mount',label:'Coupelle d’amortisseur',qty:2,ref:'COUP-AV',unit:62,total:124,status:'green',title:'Coupelles d’amortisseur',reason:'Les coupelles peuvent être liées à des bruits sur les irrégularités de chaussée.'},
+{id:'timing',label:'Kit distribution',qty:1,ref:'DIST',unit:420,total:420,status:'red',title:'Kit distribution',reason:'Aucune cohérence apparente avec le bruit sourd à l’avant lors des ralentisseurs.'},
+{id:'labor',label:'Main-d’œuvre mécanique',qty:2.5,unit:'h',ref:'MO',unitPrice:70,total:175,status:'green',title:'Main-d’œuvre',reason:'Temps plausible pour plusieurs opérations sur le train avant.'}],
+tariff:[['Amortisseurs avant ×2',290,'240–360 €','green'],['Coupelles ×2',124,'90–150 €','green'],['Kit distribution',420,'350–500 €','green'],['Main-d’œuvre · 2,5 h',175,'140–210 €','green']],globalRange:'760–1 220 €',tariffStatus:'green',ht:1009,vat:201.80,ttc:1210.80},
+'03':{id:'TEST-03',vehicle:'Citroën C3 1.6 BlueHDi 100',year:'2017',mileage:'141 200 km',problem:'Vibrations dans le volant lors des freinages à vitesse élevée.',garage:'AUTO SERVICE 33',quote:'TEST-03',date:'Test',observations:'Les pièces sont plausibles, mais aucune mesure de voile, d’épaisseur ou de contrôle détaillé n’est fournie.',operations:[
+{id:'discs',label:'Disque de frein avant',qty:2,ref:'DISC-AV',unit:110,total:220,status:'orange',title:'Disques avant',reason:'Cohérence possible avec les vibrations au freinage, mais aucune mesure de voile ou d’état n’est fournie.'},
+{id:'pads',label:'Jeu de plaquettes avant',qty:1,ref:'PAD-AV',unit:82,total:82,status:'orange',title:'Plaquettes avant',reason:'Association plausible avec une intervention de freinage, mais le devis ne documente pas l’état des pièces.'},
+{id:'control',label:'Contrôle freinage',qty:1,ref:'CTRL-FREIN',unit:65,total:65,status:'green',title:'Contrôle freinage',reason:'Le contrôle correspond directement au symptôme de vibrations au freinage.'},
+{id:'labor',label:'Main-d’œuvre',qty:1.8,unit:'h',ref:'MO',unitPrice:72,total:129.60,status:'green',title:'Main-d’œuvre',reason:'Temps cohérent avec contrôle et remplacement du freinage.'}],
+tariff:[['Disques avant ×2',220,'150–240 €','green'],['Plaquettes avant',82,'55–95 €','green'],['Contrôle freinage',65,'40–80 €','green'],['Main-d’œuvre · 1,8 h',129.60,'100–145 €','green']],globalRange:'450–650 €',tariffStatus:'green',ht:496.60,vat:99.32,ttc:595.92},
+'04':{id:'TEST-04',vehicle:'Ford Focus 1.6 TDCi 115',year:'2015',mileage:'156 700 km',problem:'Embrayage qui patine lors des fortes accélérations.',garage:'GARAGE DE LA GARE',quote:'TEST-04',date:'Test',observations:'Test volontairement orienté tarifaire : techniquement plausible, mais prix à comparer avec les données Auto Clair.',operations:[
+{id:'clutch',label:'Kit embrayage',qty:1,ref:'KIT-EMB',unit:890,total:890,status:'green',title:'Kit embrayage',reason:'Le patinage de l’embrayage est directement compatible avec le remplacement du kit.'},
+{id:'dmf',label:'Volant moteur',qty:1,ref:'VM-DMF',unit:780,total:780,status:'orange',title:'Volant moteur',reason:'Possible avec une intervention d’embrayage, mais son remplacement doit être justifié par son état.'},
+{id:'diag',label:'Diagnostic embrayage',qty:1,ref:'DIAG-EMB',unit:60,total:60,status:'green',title:'Diagnostic embrayage',reason:'Le diagnostic correspond au symptôme déclaré.'},
+{id:'labor',label:'Main-d’œuvre',qty:6,unit:'h',ref:'MO',unitPrice:95,total:570,status:'green',title:'Main-d’œuvre',reason:'6 h sont plausibles pour une intervention embrayage/volant moteur.'}],
+tariff:[['Kit embrayage',890,'450–700 €','red'],['Volant moteur',780,'450–700 €','orange'],['Diagnostic embrayage',60,'40–80 €','green'],['Main-d’œuvre · 6 h',570,'420–600 €','green']],globalRange:'1 360–2 080 €',tariffStatus:'red',ht:2300,vat:460,ttc:2760},
+'05':{id:'TEST-05',vehicle:'Volkswagen Golf VII 2.0 TDI 150',year:'2017',mileage:'178 500 km',problem:'Claquement à froid, voyant moteur intermittent et vibrations à vitesse stabilisée.',garage:'MECANIQUE DU SUD',quote:'TEST-05',date:'Test',observations:'Cas volontairement complexe : plusieurs symptômes et opérations, dont certaines nécessitent une justification ou un diagnostic complémentaire.',operations:[
+{id:'diag',label:'Diagnostic électronique',qty:1,ref:'DIAG-ELEC',unit:75,total:75,status:'green',title:'Diagnostic électronique',reason:'Le diagnostic est directement pertinent au voyant moteur intermittent.'},
+{id:'injtest',label:'Contrôle injecteurs',qty:1,ref:'CTRL-INJ',unit:110,total:110,status:'green',title:'Contrôle injecteurs',reason:'Le contrôle est pertinent pour explorer claquement moteur et fonctionnement irrégulier.'},
+{id:'injectors',label:'Injecteur diesel',qty:4,ref:'INJ-DIESEL',unit:365,total:1460,status:'orange',title:'Quatre injecteurs',reason:'Plausible, mais le remplacement des quatre injecteurs nécessite une justification par le diagnostic/les tests.'},
+{id:'mount',label:'Silentbloc moteur',qty:1,ref:'SB-MOT',unit:185,total:185,status:'orange',title:'Silentbloc moteur',reason:'Peut être lié à des vibrations, mais la relation avec l’ensemble des symptômes doit être vérifiée.'},
+{id:'tires',label:'Pneumatique avant',qty:2,ref:'PNEU-AV',unit:145,total:290,status:'orange',title:'Deux pneumatiques avant',reason:'Les vibrations à vitesse stabilisée peuvent être liées aux pneumatiques, mais le devis ne fournit aucun contrôle d’équilibrage, d’usure ou de déformation.'},
+{id:'labor',label:'Main-d’œuvre',qty:5.5,unit:'h',ref:'MO',unitPrice:78,total:429,status:'green',title:'Main-d’œuvre',reason:'Temps plausible au regard du nombre d’opérations proposées.'}],
+tariff:[['Diagnostic électronique',75,'45–90 €','green'],['Contrôle injecteurs',110,'70–140 €','green'],['Injecteurs ×4',1460,'1 000–1 500 €','orange'],['Silentbloc moteur',185,'120–220 €','green'],['Pneumatiques avant ×2',290,'180–300 €','green'],['Main-d’œuvre · 5,5 h',429,'350–500 €','green']],globalRange:'1 900–2 750 €',tariffStatus:'orange',ht:2549,vat:509.80,ttc:3058.80}
+};
+let activeKey='01';
+const statusMap={red:{badge:'red',icon:'🔴',label:'Incohérence potentielle'},orange:{badge:'orange',icon:'🟠',label:'À vérifier'},green:{badge:'green',icon:'🟢',label:'Cohérent'}};
+function money(n){return new Intl.NumberFormat('fr-FR',{minimumFractionDigits:n%1?2:0,maximumFractionDigits:2}).format(n)+' €'}
+function dossier(){return activeKey&&TESTS[activeKey]?TESTS[activeKey]:window.customDossier}
+function selectTest(k){activeKey=k;const t=dossier();window.testSelection=t;document.querySelectorAll('.test-btn').forEach(b=>b.classList.toggle('selected',b.dataset.k===k));document.getElementById('vehicleInput').value=t.vehicle+' — '+t.year;document.getElementById('mileageInput').value=t.mileage;document.getElementById('problemInput').value=t.problem;document.getElementById('fileStatus').innerHTML='Test chargé : <b>'+t.id+'</b> · <a href="'+('Auto_Clair_Test_'+k+'_'+({01:'Coherent',02:'Incoherent',03:'Ambiguous',04:'Tariff',05:'Complex'}[k])+'.pdf')+'" target="_blank">ouvrir le devis PDF</a>';show('done')}
+function loadTest(k){selectTest(k)}
+document.getElementById('quoteInput').addEventListener('change',function(){
+ const files=Array.from(this.files||[]);
+ document.getElementById('fileStatus').innerHTML=files.length
+ ? '<b>'+files.length+' document'+(files.length>1?'s':'')+' sélectionné'+(files.length>1?'s':'')+'</b> · '+files.map(f=>f.name).join(' · ')
+ : 'Choisissez une photo, un scan ou un PDF.';
+});
+
+function submitDossier(){analyzeDocument()}
+let uploadedDocuments=[];
+
+document.getElementById('quoteInput').addEventListener('change',function(){
+  uploadedDocuments=Array.from(this.files||[]);
+  const status=document.getElementById('fileStatus');
+  const btn=document.getElementById('analyzeDocumentBtn');
+  btn.disabled=!uploadedDocuments.length;
+  if(!uploadedDocuments.length){
+    status.textContent='Aucun document sélectionné.';
+    return;
+  }
+  status.innerHTML='<b>'+uploadedDocuments.length+' document'+(uploadedDocuments.length>1?'s':'')+' sélectionné'+(uploadedDocuments.length>1?'s':'')+'</b><br>'+uploadedDocuments.map(f=>f.name).join(' · ');
+});
+
+function escapeHtml(s){
+  return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+
+async function preprocessImage(file){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      // IMPORTANT : les photos de téléphone sont parfois seulement 800–1200 px de large.
+      // L'ancienne version ne faisait qu'une réduction, donc Tesseract recevait une image trop petite.
+      const maxDim=2600;
+      const minScale=2.0;
+      const downScale=Math.min(1,maxDim/Math.max(img.naturalWidth,img.naturalHeight));
+      const scale=Math.max(minScale,downScale);
+      const c=document.createElement('canvas');
+      c.width=Math.round(img.naturalWidth*scale);
+      c.height=Math.round(img.naturalHeight*scale);
+      const ctx=c.getContext('2d',{willReadFrequently:true});
+      ctx.imageSmoothingEnabled=true;
+      ctx.imageSmoothingQuality='high';
+      ctx.drawImage(img,0,0,c.width,c.height);
+      // Amélioration légère : niveaux de gris + contraste. On conserve les détails fins.
+      const data=ctx.getImageData(0,0,c.width,c.height);
+      for(let i=0;i<data.data.length;i+=4){
+        const y=0.299*data.data[i]+0.587*data.data[i+1]+0.114*data.data[i+2];
+        const v=Math.max(0,Math.min(255,(y-128)*1.35+128));
+        data.data[i]=data.data[i+1]=data.data[i+2]=v;
+      }
+      ctx.putImageData(data,0,0);
+      resolve(c);
+    };
+    img.onerror=reject;
+    img.src=URL.createObjectURL(file);
+  });
+}
+
+function normalizeOCR(text){
+  return String(text||'')
+    .replace(/\r/g,'\n')
+    .replace(/[|¦]/g,'I')
+    .replace(/[ \t]+/g,' ')
+    .replace(/\n[ \t]+/g,'\n')
+    .trim();
+}
+function cleanValue(v){return String(v||'').replace(/\s+/g,' ').replace(/^[\s:;#-]+|[\s:;]+$/g,'').trim();}
+function pickText(text,patterns){
+  for(const p of patterns){const m=text.match(p);if(m&&m[1])return cleanValue(m[1]);}
+  return '';
+}
+function pickLabeledLine(lines,labels,maxLen=120){
+  const re=new RegExp('(?:^|\\b)('+labels+')(?:\\s*[:#-]?\\s*)(.{2,'+maxLen+'})$','i');
+  for(const line of lines){const x=cleanValue(line);const m=x.match(re);if(m&&m[2])return cleanValue(m[2]);}
+  return '';
+}
+function normalizeRegistration(v){
+  return cleanValue(v).toUpperCase().replace(/\s+/g,' ');
+}
+
+// Validation métier : l'OCR peut lire correctement un texte mais l'attribuer au mauvais champ.
+// On préfère afficher « Non trouvé » plutôt qu'une donnée plausible mais fausse.
+const FIELD_REJECT=/\b(?:le\s+forfait|forfait\s+fournitures?|fournitures?\s+diverses?|main[- ]d[’']œuvre|remplacement|diagnostic|vidange|courroie|distribution|embrayage|plaquette|disque|amortisseur|filtre|pneu|batterie|huile|contr[oô]le\s+technique|total\s+ttc|total\s+ht|sous[- ]total|tva)\b/i;
+function validCustomer(v){
+  v=cleanValue(v);
+  if(!v || v.length<2 || v.length>90 || FIELD_REJECT.test(v)) return '';
+  if(/^(?:client|nom du client|destinataire)$/i.test(v)) return '';
+  if(/\b(?:€|\d+(?:[,.]\d{2})\s*€|cm3|\bkm\b)\b/i.test(v)) return '';
+  return v;
+}
+function validGarage(v){
+  v=cleanValue(v);
+  if(!v || v.length<3 || v.length>100 || FIELD_REJECT.test(v)) return '';
+  if(/^(?:garage|réparateur|société|établissement)$/i.test(v)) return '';
+  return v;
+}
+function validVehicle(v){
+  v=cleanValue(v);
+  if(!v || v.length<2 || v.length>100 || FIELD_REJECT.test(v)) return '';
+  if(/^(?:véhicule|vehicule|modèle|modele)$/i.test(v)) return '';
+  return v;
+}
+function validEngine(v){
+  v=cleanValue(v);
+  if(!v || v.length>100 || FIELD_REJECT.test(v)) return '';
+  return v;
+}
+function validPower(v){
+  v=cleanValue(v);
+  return /^(?:\d{1,3}(?:[.,]\d+)?\s*(?:ch|cv|kw|ch\s*fiscaux))$/i.test(v) ? v : '';
+}
+function validCylinder(v){
+  v=cleanValue(v).replace(/\s*(?:cm3|cc)$/i,'').trim();
+  return /^\d{2,5}(?:[ .]\d{3})?$/.test(v) ? v+' cm³' : '';
+}
+function validMileage(v){
+  v=cleanValue(v).replace(/\s*km\b/i,'').trim();
+  return /^(?:\d{1,3}(?:[ .]\d{3})+|\d{4,7})$/.test(v) ? v.replace(/\s+/g,' ')+' km' : '';
+}
+function validDate(v){
+  v=cleanValue(v);
+  return /^(?:0?[1-9]|[12]\d|3[01])[\/.\-](?:0?[1-9]|1[0-2])[\/.\-]\d{2,4}$/.test(v) ? v : '';
+}
+function validMoney(v){
+  v=cleanValue(v);
+  const m=v.replace(/€/g,'').replace(/\s/g,'').match(/^(\d+(?:[.,]\d{2}))$/);
+  return m ? m[1].replace(',', '.')+' €' : '';
+}
+function validateExtractionFields(e){
+  e.customer=validCustomer(e.customer);
+  e.garage=validGarage(e.garage);
+  e.vehicle=validVehicle(e.vehicle);
+  e.engine=validEngine(e.engine);
+  e.power=validPower(e.power);
+  e.cylinderCapacity=validCylinder(e.cylinderCapacity);
+  e.mileage=validMileage(e.mileage);
+  e.firstRegistration=validDate(e.firstRegistration);
+  e.quoteDate=validDate(e.quoteDate);
+  const ct=(e.technicalInspection||'').match(/(?:0?[1-9]|[12]\d|3[01])[\/.\-](?:0?[1-9]|1[0-2])[\/.\-]\d{2,4}/);
+  e.technicalInspection=ct?ct[0]:'';
+  e.totals.ht=validMoney(e.totals.ht);
+  e.totals.vat=validMoney(e.totals.vat);
+  e.totals.ttc=validMoney(e.totals.ttc);
+  return e;
+}
+function normalizeMileage(v){
+  const n=cleanValue(v).replace(/\s*km\b/i,'').trim();
+  return n ? n.replace(/\s+/g,' ')+' km' : '';
+}
+function extractQuoteData(text){
+  const raw=normalizeOCR(text);
+  const lines=raw.split(/\n+/).map(cleanValue).filter(Boolean);
+  const flat=lines.join(' ');
+  const e={vehicle:'',year:'',mileage:'',customer:'',garage:'',quoteNumber:'',quoteDate:'',registration:'',vin:'',symptoms:'',conditions:'',technicalInspection:'',cylinderCapacity:'',firstRegistration:'',engine:'',power:'',lines:[],totals:{ht:'',vat:'',ttc:''}};
+
+  // Les marqueurs de zones sont produits par l'OCR spatial. Ils sont prioritaires
+  // sur le texte global, car un devis comporte plusieurs blocs très proches.
+  const getZone=(name)=>{const m=raw.match(new RegExp('\\b'+name+'\\b([\\s\\S]*?)(?=\\n[A-Z_]+_ZONE\\b|$)','i'));return m?m[1]:'';};
+  const clientZone=getZone('CLIENT_ZONE');
+  const garageZone=getZone('GARAGE_ZONE');
+  const vehicleZone=getZone('VEHICLE_ZONE');
+  const modelZone=getZone('MODEL_ZONE');
+  const totalsZone=getZone('TOTALS_ZONE');
+  const tableZone=getZone('TABLE_ZONE');
+  const kmZone=getZone('KM_ZONE');
+  const vehicleTopLeftZone=getZone('VEHICLE_TOP_LEFT_ZONE');
+  const serialZone=getZone('SERIAL_ZONE');
+  const regZone=getZone('REG_ZONE');
+  const allVehicleText=vehicleZone+'\n'+tableZone+'\n'+raw;
+
+  // --- En-tête : client ---
+  // On privilégie un nom en capitales (cas typique des devis), avant les phrases
+  // administratives comme « Vous avez été reçu par ... ».
+  const clientLines=clientZone.split(/\n+/).map(cleanValue).filter(Boolean);
+  // Le nom client est dans le cadre en haut à droite, généralement en capitales.
+  let cm=clientLines.find(x=>/^[A-ZÀ-ÖØ-Ý'’-]{2,}\s+[A-ZÀ-ÖØ-Ý'’-]{2,}(?:\s+[A-ZÀ-ÖØ-Ý'’-]{2,})?$/.test(x));
+  if(!cm){
+    const upper=clientZone.replace(/[^A-ZÀ-ÖØ-Ý'’\-\s]/g,' ').replace(/\s+/g,' ').trim();
+    const m=upper.match(/\b([A-ZÀ-ÖØ-Ý'’-]{2,}\s+[A-ZÀ-ÖØ-Ý'’-]{2,}(?:\s+[A-ZÀ-ÖØ-Ý'’-]{2,})?)\b/);
+    if(m) cm=m[1];
+  }
+  if(!cm) cm=clientLines.find(x=>/\b(?:client|nom\s*(?:du\s*)?client|destinataire)\b/i.test(x));
+  if(cm){
+    const m=cm.match(/^(?:client|nom\s*(?:du\s*)?client|destinataire)\s*[:#-]?\s*(.+)$/i);
+    e.customer=validCustomer(m?m[1]:cm);
+  }
+  // Fallback robuste : sur beaucoup de devis le client est simplement écrit
+  // en capitales dans son encadré, sans libellé « Client ».
+  if(!e.customer){
+    const candidates=(clientZone+'\n'+raw).split(/\n+/).map(cleanValue).filter(Boolean);
+    const bad=/feu\s*vert|devis|vous\s+avez|re[cç]u\s+par|t[eé]l|email|client|date|immatriculation|dacia|duster/i;
+    const hit=candidates.find(x=>{
+      if(bad.test(x)||x.length<5||x.length>70)return false;
+      const words=x.split(/\s+/).filter(Boolean);
+      return words.length>=2 && words.length<=4 && words.every(w=>/^[A-ZÀ-ÖØ-Ý'’-]{2,}$/.test(w.replace(/[^A-ZÀ-ÖØ-Ý'’-]/g,'')));
+    });
+    if(hit)e.customer=validCustomer(hit);
+  }
+
+  // --- En-tête : garage ---
+  const garageLines=garageZone.split(/\n+/).map(cleanValue).filter(Boolean);
+  const gb=garageLines.find(x=>/^(?:Feu\s*Vert|Norauto|Midas|Speedy|Euromaster|First\s*Stop|Point\s*S|Motrio|AD\s+Garage)\b/i.test(x));
+  if(gb){
+    const m=gb.match(/^(Feu\s*Vert|Norauto|Midas|Speedy|Euromaster|First\s*Stop|Point\s*S|Motrio|AD\s+Garage)\b/i);
+    e.garage=m?m[1].replace(/\s+/g,' ').trim():gb;
+  }
+  if(!e.garage){
+    const gm=raw.match(/\b(Feu\s*Vert|Norauto|Midas|Speedy|Euromaster|First\s*Stop|Point\s*S|Motrio|AD\s+Garage)\b/i);
+    if(gm)e.garage=gm[1].replace(/\s+/g,' ').trim();
+  }
+
+  // --- N° et date du devis ---
+  e.quoteNumber=pickText(raw,[
+    /(?:devis\s*n[°o]?|n[°o]?\s*(?:devis|de\s*devis)|num[eé]ro\s*(?:de\s*)?devis|r[eé]f[eé]rence\s*devis)\s*[:#-]?\s*([A-Z0-9][A-Z0-9\/_-]{2,30})/i,
+    /\bdevis\s*n[°o]?\s*([0-9]{4,12})\b/i
+  ]);
+  if(!e.quoteNumber){const q=raw.match(/\bdevis\s*n[°o]?\s*([0-9]{4,12})\b/i);if(q)e.quoteNumber=q[1];}
+  e.quoteDate=pickText(raw,[
+    /(?:date\s*(?:du\s*)?devis|date\s*d[’']?[eé]mission|[eé]mis\s*le|[eé]tabli\s*le)\s*[:#-]?\s*(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4})/i,
+    /\b(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{4})\b/
+  ]);
+
+  // --- Bloc véhicule : zone haut-gauche prioritaire ---
+  const headerVehicleText=normalizeOCR(vehicleTopLeftZone+'\n'+vehicleZone+'\n'+modelZone);
+  const vz=normalizeOCR(headerVehicleText+'\n'+kmZone+'\n'+tableZone);
+
+  // Immatriculation : priorité au bloc véhicule et à une lecture dédiée.
+  // On accepte les espaces introduits par l'OCR et quelques confusions classiques,
+  // mais uniquement si le résultat respecte strictement le format AA 123 AA.
+  function findRegistration(src){
+    const t=String(src||'').toUpperCase().replace(/[OoQ]/g,'0').replace(/[Il]/g,'1');
+    const m=t.match(/\b([A-Z]{2})\s*([0-9]{3})\s*([A-Z]{2})\b/);
+    return m?m[1]+' '+m[2]+' '+m[3]:'';
+  }
+  e.registration=findRegistration(regZone) || findRegistration(vz) || findRegistration(raw);
+  if(!e.registration){
+    const compact=String(regZone+'\n'+vz).toUpperCase().replace(/[^A-Z0-9]/g,'');
+    const m=compact.match(/([A-Z]{2}[0-9]{3}[A-Z]{2})/);
+    if(m)e.registration=m[1].slice(0,2)+' '+m[1].slice(2,5)+' '+m[1].slice(5);
+  }
+
+  const vehicleLines=headerVehicleText.split(/\n+/).map(cleanValue).filter(Boolean);
+  const vehicleJoined=vehicleLines.join(' ');
+  // Le modèle est en gras et peut être séparé en plusieurs blocs par Tesseract.
+  const modelPatterns=[
+    /\b(DACIA\s+DUSTER)\b/i,
+    /\b(DUSTER)\b/i,
+    /\b(RENAULT\s+[A-ZÀ-ÿ0-9-]+(?:\s+[A-ZÀ-ÿ0-9-]+){0,2})\b/i,
+    /\b(PEUGEOT\s+[A-ZÀ-ÿ0-9-]+(?:\s+[A-ZÀ-ÿ0-9-]+){0,2})\b/i,
+    /\b(CITRO[EË]N\s+[A-ZÀ-ÿ0-9-]+(?:\s+[A-ZÀ-ÿ0-9-]+){0,2})\b/i,
+    /\b(VOLKSWAGEN\s+[A-ZÀ-ÿ0-9-]+(?:\s+[A-ZÀ-ÿ0-9-]+){0,2})\b/i
+  ];
+  for(const re of modelPatterns){
+    const m=vehicleJoined.match(re)||raw.match(re);
+    if(m){e.vehicle=cleanValue(m[1]).toUpperCase();break;}
+  }
+  // Secours OCR : autorise une rupture de ligne entre DACIA et DUSTER.
+  if(!e.vehicle && /DACIA[\s\n]+DUSTER/i.test(raw)) e.vehicle='DACIA DUSTER';
+  // Lecture dédiée du modèle : Tesseract peut perdre le nom dans la lecture globale.
+  if(!e.vehicle){
+    const modelSources=[modelZone,vehicleTopLeftZone,vehicleZone,raw];
+    const knownMakes=/\b(?:DACIA|RENAULT|PEUGEOT|CITRO[EË]N|VOLKSWAGEN|FORD|OPEL|FIAT|TOYOTA|NISSAN|KIA|HYUNDAI|BMW|AUDI|MERCEDES|SKODA|SEAT|SUZUKI|MAZDA|HONDA|VOLVO|LAND[ -]?ROVER|JEEP)\b/i;
+    for(const src of modelSources){
+      const ls=String(src||'').split(/\n+/).map(cleanValue).filter(Boolean);
+      const hit=ls.find(x=>knownMakes.test(x) && !FIELD_REJECT.test(x) && x.length<=70);
+      if(hit){
+        // Retire les libellés administratifs mais conserve le modèle lu.
+        const cleaned=hit.replace(/^(?:véhicule|vehicule|modèle|modele)\s*[:#-]?\s*/i,'').trim();
+        if(cleaned.length>=3){e.vehicle=cleaned.toUpperCase();break;}
+      }
+    }
+  }
+
+  // La ligne du devis contient généralement : « Motorisation 1.5 dCi 4x4 1461cm3 109cv (80) ».
+  const metaLines=headerVehicleText.split(/\n+/).map(cleanValue).filter(Boolean);
+  const engineLine=metaLines.find(x=>/dci|tdi|hdi|tce|tsi|essence|diesel/i.test(x));
+  const em=(engineLine||headerVehicleText).match(/\b(\d+(?:[.,]\d+)?\s*(?:dci|tdi|hdi|tce|tsi)(?:\s*4x4)?|\d+(?:[.,]\d+)?\s*(?:essence|diesel))\b/i);
+  if(em)e.engine=cleanValue(em[1]);
+  const cm3=(engineLine||headerVehicleText).match(/\b(\d{3,5})\s*(?:cm3|cm³|cc)\b/i) || headerVehicleText.match(/\b(\d{3,5})\s*(?:cm3|cm³|cc)\b/i);
+  if(cm3)e.cylinderCapacity=cm3[1]+' cm³';
+  const pm=(engineLine||headerVehicleText).match(/\b(\d{2,3})\s*(?:cv|ch)\b/i);
+  if(pm)e.power=pm[1]+' cv';
+
+  // VIN / numéro de série : on lit plusieurs fois le bloc haut-gauche.
+  // Le VIN Dacia comporte 17 caractères et commence généralement par UU1.
+  function normalizeVinCandidate(v){
+    let c=String(v||'').replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+    // Confusions OCR classiques sur les VIN : I→1, O/Q→0.
+    c=c.replace(/I/g,'1').replace(/[OQ]/g,'0');
+    if(/^UUH[A-Z0-9]{14}$/.test(c)) c='UU1'+c.slice(3);
+    return c;
+  }
+  const vinSources=[serialZone,vehicleTopLeftZone,headerVehicleText,raw];
+  const vinCandidates=[];
+  for(const src of vinSources){
+    const text=String(src||'');
+    const labelled=text.match(/(?:N[.°o]?\s*de\s*s[eé]rie|num[eé]ro\s*de\s*s[eé]rie|VIN)[^A-Za-z0-9]{0,15}([A-Za-z0-9\s-]{15,32})/i);
+    if(labelled) vinCandidates.push({v:labelled[1],score:100});
+    const compact=normalizeVinCandidate(text);
+    for(let i=0;i<=compact.length-17;i++) vinCandidates.push({v:compact.slice(i,i+17),score:10});
+    const runs=text.match(/[A-Za-z0-9][A-Za-z0-9\s-]{15,30}[A-Za-z0-9]/g)||[];
+    runs.forEach(v=>vinCandidates.push({v,score:20}));
+    const uu=text.match(/U{1,2}[U1I][A-Za-z0-9\s-]{14,24}/gi)||[];
+    uu.forEach(v=>vinCandidates.push({v,score:250}));
+  }
+  const scored=vinCandidates.map(o=>{
+    const c=normalizeVinCandidate(o.v);
+    if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(c)) return null;
+    let score=o.score;
+    if(/^UU1[A-HJ-NPR-Z0-9]{14}$/.test(c)) score+=300;
+    if(/^UU[1I]/.test(String(o.v).replace(/[^A-Za-z0-9]/g,'').toUpperCase())) score+=100;
+    return {c,score};
+  }).filter(Boolean).sort((a,b)=>b.score-a.score);
+  if(scored.length) e.vin=scored[0].c;
+
+  // --- Dates / kilométrage ---
+  e.firstRegistration=pickText(vz,[
+    /(?:date\s*de\s*mise\s*en\s*circulation|mise\s*en\s*circulation|1[èe]re\s*mise\s*en\s*circulation)\s*[:#-]?\s*(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4})/i
+  ]) || pickText(raw,[/(?:mise\s*en\s*circulation|1[èe]re\s*mise\s*en\s*circulation)\s*[:#-]?\s*(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4})/i]);
+  const kmCandidates=[];
+  for(const src of [kmZone]){
+    const ms=src.matchAll(/\b([0-9]{5,7})\b/g);
+    for(const m of ms){
+      const n=m[1];
+      if(!/^20\d{2}$/.test(n) && !/^19\d{2}$/.test(n)) kmCandidates.push(n);
+    }
+  }
+  // Si les deux lectures donnent une même valeur, c'est notre meilleur signal.
+  const freq={}; kmCandidates.forEach(n=>freq[n]=(freq[n]||0)+1);
+  const ranked=Object.keys(freq).sort((a,b)=>(freq[b]-freq[a]) || (Math.abs(Number(a)-150000)-Math.abs(Number(b)-150000)));
+  e.mileage=ranked.length ? normalizeMileage(ranked[0]) : '';
+  if(!e.mileage){
+    const m=raw.match(/dernier\s+kilom[eé]trage\s+constat[eé][^0-9]{0,40}([0-9]{5,7})/i);
+    if(m)e.mileage=normalizeMileage(m[1]);
+  }
+  // Secours V42 : plusieurs lectures peuvent contenir la même valeur.
+  // On ne choisit une valeur que si elle est explicitement plausible pour un kilométrage.
+  if(!e.mileage){
+    const nums=[...kmZone.matchAll(/\b(\d{5,7})\b/g)].map(m=>m[1]).filter(n=>!/^19\d{2}$|^20\d{2}$/.test(n));
+    const freq={}; nums.forEach(n=>freq[n]=(freq[n]||0)+1);
+    const best=Object.keys(freq).sort((a,b)=>freq[b]-freq[a]||Math.abs(+a-150000)-Math.abs(+b-150000))[0];
+    if(best)e.mileage=normalizeMileage(best);
+  }
+  e.technicalInspection=pickText(vz,[/(?:date\s+du\s+contr[oô]le\s+technique|contr[oô]le\s+technique|ct)\s*[:#-]?\s*(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4})/i]);
+  if(!e.technicalInspection)e.technicalInspection=pickText(raw,[/(?:contr[oô]le\s+technique|ct)\s*[:#-]?\s*(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4})/i]);
+
+
+  // --- Tarifs et totaux : ne jamais confondre taux TVA et montant TVA.
+  const tz=normalizeOCR(totalsZone+'\n'+tableZone+'\n'+raw);
+  const moneyTokens=[...tz.matchAll(/\b\d{1,6}(?:[ .]\d{3})*(?:[,.]\d{2})\b/g)].map(m=>m[0].replace(/ /g,''));
+  const moneyNum=v=>parseFloat(String(v).replace(',','.'));
+  const unique=[...new Set(moneyTokens)].filter(v=>moneyNum(v)>0);
+
+  function labelledAmount(label){
+    const re=new RegExp(label+'[^0-9]{0,40}([0-9]{1,6}(?:[ .]\d{3})*(?:[,.]\d{2}))','i');
+    const m=tz.match(re); return m?m[1].replace(/ /g,''):'';
+  }
+  e.totals.ht=labelledAmount('(?:Total|Montant)\s*HT');
+  e.totals.vat=labelledAmount('(?:Montant\s*)?TVA');
+  e.totals.ttc=labelledAmount('Total\s*TTC');
+
+  // Si l'OCR a séparé les libellés et les nombres, on exploite la cohérence HT + TVA = TTC.
+  // On ignore explicitement le taux 20,00 %.
+  const usable=unique.filter(v=>Math.abs(moneyNum(v)-20)!==0);
+  if(!e.totals.ttc){
+    const t=usable.filter(v=>moneyNum(v)>0).sort((a,b)=>moneyNum(b)-moneyNum(a));
+    if(t.length)e.totals.ttc=t[0];
+  }
+  if(!e.totals.ht && e.totals.ttc){
+    const ttc=moneyNum(e.totals.ttc);
+    const candidates=usable.filter(v=>moneyNum(v)<ttc);
+    // Cherche une paire HT + TVA = TTC.
+    outer: for(const a of candidates){for(const b of candidates){if(a===b)continue;if(Math.abs(moneyNum(a)+moneyNum(b)-ttc)<0.011){
+      e.totals.ht=moneyNum(a)>=moneyNum(b)?a:b; e.totals.vat=moneyNum(a)<moneyNum(b)?a:b; break outer;
+    }}}
+  }
+  if(!e.totals.vat && e.totals.ht && e.totals.ttc){e.totals.vat=(moneyNum(e.totals.ttc)-moneyNum(e.totals.ht)).toFixed(2);}
+  if(!e.totals.ht && e.totals.vat && e.totals.ttc){e.totals.ht=(moneyNum(e.totals.ttc)-moneyNum(e.totals.vat)).toFixed(2);}
+  if(!e.totals.ttc && e.totals.ht && e.totals.vat){e.totals.ttc=(moneyNum(e.totals.ht)+moneyNum(e.totals.vat)).toFixed(2);}
+
+  // Lignes : une seule ligne par prestation, montant = dernier nombre avant éventuel %.
+  e.lines=[];
+  const serviceKeywords=/vidange|frein|purge|recyclage|fournitures|filtre|disque|plaquette|amortisseur|pneu|injecteur|embrayage|distribution|huile|batterie|bougie|courroie|diagnostic/i;
+  for(const line of tableZone.split(/\n+/).map(cleanValue).filter(Boolean)){
+    if(!serviceKeywords.test(line)||/total|tva|sous-total/i.test(line))continue;
+    const vals=[...line.matchAll(/\b\d{1,6}(?:[ .]\d{3})*(?:[,.]\d{2})\b/g)].map(m=>m[0].replace(/ /g,''));
+    const usableVals=vals.filter(v=>Math.abs(moneyNum(v)-20)>0.001 && Math.abs(moneyNum(v)-1)>0.001);
+    if(!usableVals.length)continue;
+    const amount=usableVals[usableVals.length-1].replace(',','.');
+    const pos=line.search(/\b\d{1,6}(?:[ .]\d{3})*(?:[,.]\d{2})\b/);
+    const label=pos>0?cleanValue(line.slice(0,pos)):cleanValue(line);
+    if(label.length>=3)e.lines.push({label,amount:amount+' €'});
+  }
+  // Déduplication des lignes.
+  e.lines=e.lines.filter((x,i,a)=>a.findIndex(y=>y.label.toLowerCase()===x.label.toLowerCase()&&y.amount===x.amount)===i);
+
+  e.conditions=pickText(raw,[/(?:conditions\s*(?:g[eé]n[eé]rales)?|conditions\s+de\s+vente)\s*[:#-]?\s*([^\n]{2,180})/i]);
+  e.symptoms=pickText(raw,[/(?:motif|sympt[oô]mes?|probl[eè]me|demande)\s*[:#-]?\s*([^\n]{5,180})/i]);
+
+  // Lignes du devis : le tableau contient plusieurs colonnes numériques.
+  // IMPORTANT : ne jamais prendre « 20.00 » (Tx TVA) comme montant de prestation.
+  const keywords=/vidange|frein|purge|recyclage|fournitures|filtre|disque|plaquette|amortisseur|pneu|injecteur|embrayage|distribution|huile|batterie|bougie|courroie|diagnostic/i;
+  const moneyRe=/\b\d{1,6}(?:[ .]\d{3})*(?:[.,]\d{2})\b/g;
+  for(const line of tableZone.split(/\n+/).map(cleanValue).filter(Boolean)){
+    if(!keywords.test(line)||/total|tva|sous-total/i.test(line)) continue;
+    const ms=[...line.matchAll(moneyRe)].map(m=>m[0].replace(',', '.'));
+    const amounts=ms.filter(v=>v!=='1.00' && v!=='20.00' && /^\d+(?:\.\d{2})$/.test(v));
+    if(!amounts.length) continue;
+    const amount=amounts[amounts.length-1];
+    const firstNum=line.search(moneyRe);
+    const label=firstNum>0?cleanValue(line.slice(0,firstNum)):cleanValue(line);
+    if(label.length>=3)e.lines.push({label,amount:amount+' €'});
+  }
+
+  const labeledYear=pickText(raw,[/(?:ann[eé]e|ann[eé]e\s*du\s*v[eé]hicule|mill[eé]sime)\s*[:#-]?\s*((?:19|20)\d{2})/i]);
+  if(labeledYear)e.year=labeledYear; else if(e.firstRegistration){const fy=e.firstRegistration.match(/(?:^|[\/.\-])((?:19|20)\d{2})$/);if(fy)e.year=fy[1];}
+  return validateExtractionFields(e);
+}
+
+function renderExtractField(label,id,value,kind){
+  const val=value||''; const cls=val?'detected':'missing';
+  const badge=val?'<span class="badge green">Détecté</span>':'<span class="badge orange">Non trouvé</span>';
+  return '<div class="card extraction-field '+cls+'"><div class="topbar"><label style="margin:0">'+label+'</label>'+badge+'</div><input id="'+id+'" value="'+escapeHtml(val)+'" placeholder="Non détecté — à vérifier ou compléter"></div>';
+}
+
+async function ocrImage(file,index,total){
+  const canvas=await preprocessImage(file);
+  renderOCRProgress('Lecture du document '+index+'/'+total+' · lecture principale',5);
+  const r1=await Tesseract.recognize(canvas,'fra',{logger:m=>{
+    if(m.status==='recognizing text') renderOCRProgress('Lecture du document '+index+'/'+total,(m.progress||0)*45+5);
+  }});
+  const full=r1.data.text||'';
+
+  const w=canvas.width,h=canvas.height;
+  async function zone(x,y,cw,ch,label,progress){
+    const z=document.createElement('canvas');
+    z.width=Math.max(1,Math.floor(cw)); z.height=Math.max(1,Math.floor(ch));
+    const zctx=z.getContext('2d'); zctx.imageSmoothingEnabled=true; zctx.imageSmoothingQuality='high';
+    zctx.drawImage(canvas,Math.floor(x),Math.floor(y),Math.floor(cw),Math.floor(ch),0,0,z.width,z.height);
+    const r=await Tesseract.recognize(z,'fra');
+    renderOCRProgress('Lecture du document '+index+'/'+total,progress);
+    return '\n'+label+'\n'+(r.data.text||'')+'\n';
+  }
+
+  // Zones adaptées à la structure habituelle d'un devis A4 photographié :
+  // garage haut-gauche, client haut-droit, bloc véhicule sous l'en-tête,
+  // tableau central et totaux en bas. Les chevauchements sont volontaires.
+  // Zones resserrées : éviter que l'en-tête ne déborde sur le tableau.
+  const garage=await zone(w*.02,h*.065,w*.52,h*.105,'GARAGE_ZONE',55);
+  const client=await zone(w*.47,h*.075,w*.51,h*.105,'CLIENT_ZONE',63);
+  const vehicleTopLeft=await zone(w*.02,h*.125,w*.60,h*.115,'VEHICLE_TOP_LEFT_ZONE',70);
+  // Lecture dédiée de la ligne N° de série, juste sous la motorisation.
+  async function serialSpecial(progress){
+    // Deux bandes qui se chevauchent : le numéro de série peut être légèrement plus haut/bas selon le devis.
+    const bands=[
+      [Math.floor(w*.03),Math.floor(h*.205),Math.floor(w*.66),Math.floor(h*.060)],
+      [Math.floor(w*.03),Math.floor(h*.225),Math.floor(w*.70),Math.floor(h*.070)]
+    ];
+    const out=[];
+    for(let bi=0;bi<bands.length;bi++){
+      const [x,y,cw,ch]=bands[bi];
+      const z=document.createElement('canvas'); z.width=Math.max(1,cw*3); z.height=Math.max(1,ch*3);
+      const zctx=z.getContext('2d'); zctx.imageSmoothingEnabled=true; zctx.imageSmoothingQuality='high';
+      zctx.drawImage(canvas,x,y,cw,ch,0,0,z.width,z.height);
+      for(const psm of [6,7,11]){
+        const r=await Tesseract.recognize(z,'fra',{psm,tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'});
+        out.push('SERIAL_'+bi+'_'+psm+'\n'+(r.data.text||''));
+      }
+    }
+    renderOCRProgress('Lecture du document '+index+'/'+total,progress);
+    return '\nSERIAL_ZONE\n'+out.join('\n')+'\n';
+  }
+  const serial=await serialSpecial(74);
+  // Zone modèle élargie + plusieurs PSM : le nom du véhicule peut être imprimé
+  // au-dessus de la ligne motorisation et disparaître dans la lecture standard.
+  async function modelSpecial(progress){
+    const x=Math.floor(w*.02), y=Math.floor(h*.105), cw=Math.floor(w*.96), ch=Math.floor(h*.145);
+    const z=document.createElement('canvas'); z.width=Math.max(1,cw*2); z.height=Math.max(1,ch*2);
+    const zctx=z.getContext('2d'); zctx.imageSmoothingEnabled=true; zctx.imageSmoothingQuality='high';
+    zctx.drawImage(canvas,x,y,cw,ch,0,0,z.width,z.height);
+    const out=[];
+    for(const psm of [6,11]){
+      const r=await Tesseract.recognize(z,'fra',{psm});
+      out.push('MODEL_'+psm+'\n'+(r.data.text||''));
+    }
+    renderOCRProgress('Lecture du document '+index+'/'+total,progress);
+    return '\nMODEL_ZONE\n'+out.join('\n')+'\n';
+  }
+  const model=await modelSpecial(74);
+  const vehicle=await zone(w*.02,h*.165,w*.96,h*.105,'VEHICLE_ZONE',80);
+  // Zone numérique dédiée : elle évite que l'OCR ne perde le premier chiffre.
+  // Kilométrage : lecture spécialisée en chiffres uniquement.
+  async function kmSpecial(progress){
+    const x=Math.floor(w*.48), y=Math.floor(h*.175), cw=Math.floor(w*.50), ch=Math.floor(h*.085);
+    const z=document.createElement('canvas');
+    z.width=Math.max(1,cw*2); z.height=Math.max(1,ch*2);
+    const zctx=z.getContext('2d');
+    zctx.imageSmoothingEnabled=true; zctx.imageSmoothingQuality='high';
+    zctx.drawImage(canvas,x,y,cw,ch,0,0,z.width,z.height);
+    const out=[];
+    for(const psm of [7,6]){
+      const r=await Tesseract.recognize(z,'fra',{psm:psm,tessedit_char_whitelist:'0123456789'});
+      out.push('KM_'+psm+'\n'+(r.data.text||''));
+    }
+    renderOCRProgress('Lecture du document '+index+'/'+total,progress);
+    return '\nKM_ZONE\n'+out.join('\n')+'\n';
+  }
+  const km=await kmSpecial(78);
+  // Immatriculation : deux lectures dédiées avec agrandissement et whitelist.
+  // La zone chevauche volontairement le bloc véhicule pour couvrir les devis
+  // où la plaque est légèrement plus haute ou plus basse.
+  async function regSpecial(progress){
+    const bands=[
+      [Math.floor(w*.02),Math.floor(h*.155),Math.floor(w*.96),Math.floor(h*.085)],
+      [Math.floor(w*.02),Math.floor(h*.175),Math.floor(w*.96),Math.floor(h*.085)],
+      [Math.floor(w*.02),Math.floor(h*.195),Math.floor(w*.96),Math.floor(h*.080)]
+    ];
+    const out=[];
+    for(let bi=0;bi<bands.length;bi++){
+      const [x,y,cw,ch]=bands[bi];
+      const z=document.createElement('canvas'); z.width=Math.max(1,cw*3); z.height=Math.max(1,ch*3);
+      const zctx=z.getContext('2d'); zctx.imageSmoothingEnabled=true; zctx.imageSmoothingQuality='high';
+      zctx.drawImage(canvas,x,y,cw,ch,0,0,z.width,z.height);
+      for(const psm of [6,7,11]){
+        const r=await Tesseract.recognize(z,'fra',{psm,tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'});
+        out.push('REG_'+bi+'_'+psm+'\n'+(r.data.text||''));
+      }
+    }
+    renderOCRProgress('Lecture du document '+index+'/'+total,progress);
+    return '\nREG_ZONE\n'+out.join('\n')+'\n';
+  }
+  const reg=await regSpecial(84);
+  const table=await zone(0,h*.265,w,h*.20,'TABLE_ZONE',87);
+  const totals=await zone(0,h*.445,w,h*.16,'TOTALS_ZONE',97);
+  return full+garage+client+vehicleTopLeft+model+serial+vehicle+km+reg+table+totals;
+}
+
+async function ocrPdf(file,index,total){
+  if(!window.pdfjsLib) throw new Error('PDF.js indisponible');
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  let text='';
+  for(let n=1;n<=pdf.numPages;n++){
+    renderOCRProgress('Lecture PDF '+index+'/'+total+' · page '+n+'/'+pdf.numPages,((n-1)/pdf.numPages)*100);
+    const page=await pdf.getPage(n);
+    const viewport=page.getViewport({scale:2});
+    const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+    await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+    const result=await Tesseract.recognize(canvas,'fra',{logger:m=>{if(m.status==='recognizing text')renderOCRProgress('OCR PDF '+index+'/'+total+' · page '+n+'/'+pdf.numPages,(n-1+((m.progress||0)))/pdf.numPages*100);}});
+    text+=(result.data.text||'')+'\n';
+  }
+  return text;
+}
+async function visionAnalyzeImage(file){
+  const dataUrl=await new Promise((resolve,reject)=>{
+    const fr=new FileReader(); fr.onload=()=>resolve(fr.result); fr.onerror=reject; fr.readAsDataURL(file);
+  });
+  renderOCRProgress('Analyse Vision IA du devis…',12);
+  const r=await fetch('/api/vision-analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:dataUrl})});
+  if(!r.ok){let msg='Erreur Vision IA'; try{const j=await r.json();msg=j.error||msg;}catch{} throw new Error(msg);}
+  return await r.json();
+}
+
+async function analyzeDocument(){
+  if(!uploadedDocuments.length){alert('Ajoutez d’abord une photo, un scan ou un PDF du devis.');return;}
+  const btn=document.getElementById('analyzeDocumentBtn'); if(btn)btn.disabled=true;
+  try{
+    renderOCRProgress('Préparation de la lecture…',0);
+    let combined='';
+    let visionData=null;
+    for(let i=0;i<uploadedDocuments.length;i++){
+      const f=uploadedDocuments[i];
+      if(f.type.startsWith('image/')){
+        try{ visionData=await visionAnalyzeImage(f); }
+        catch(err){ console.warn('Vision IA indisponible, fallback OCR:',err); }
+        combined+=await ocrImage(f,i+1,uploadedDocuments.length)+'\n';
+      } else if(f.type==='application/pdf'||/\.pdf$/i.test(f.name)) combined+=await ocrPdf(f,i+1,uploadedDocuments.length);
+    }
+    window.rawOCRText=combined;
+    window.documentExtraction=extractQuoteData(combined);
+    if(visionData){
+      const e=window.documentExtraction;
+      const v=visionData.extraction||visionData;
+      const take=(k)=>{if(v[k]!==undefined&&v[k]!==null&&String(v[k]).trim()) e[k]=String(v[k]).trim();};
+      ['customer','garage','vehicle','engine','power','cylinderCapacity','firstRegistration','mileage','registration','vin','technicalInspection','conditions','quoteNumber','quoteDate','symptoms'].forEach(take);
+      if(v.totals)e.totals=Object.assign({},e.totals||{},v.totals);
+      if(Array.isArray(v.lines)&&v.lines.length)e.lines=v.lines;
+      e.visionSource=true;
+    }
+    window.documentExtraction.sourceCount=uploadedDocuments.length;
+    renderExtraction();
+    show('extraction');
+  }catch(err){
+    console.error(err);
+    alert('La lecture du document a échoué. Vérifiez la photo/PDF et réessayez.');
+  }finally{if(btn)btn.disabled=!uploadedDocuments.length;}
+}
+
+function renderOCRProgress(msg,pct){
+  document.getElementById('fileStatus').innerHTML='<b>'+msg+'</b> · '+Math.round(pct)+'%';
+}
+
+function renderExtraction(){
+  const e=window.documentExtraction||{};
+  document.getElementById('extraction-content').innerHTML=
+    '<div class="card"><span class="badge '+(e.visionSource?'green':'orange')+'">'+(e.visionSource?'Vision IA + OCR':'Lecture du devis')+'</span><p class="muted">Les informations sont extraites du document puis proposées à vérification. Une donnée absente ou illisible reste non trouvée.</p></div>'+ 
+    renderExtractField('Client','extCustomer',e.customer)+
+    renderExtractField('Garage / réparateur','extGarage',e.garage)+
+    renderExtractField('Véhicule','extVehicle',e.vehicle)+
+    renderExtractField('Motorisation','extEngine',e.engine)+
+    renderExtractField('Puissance','extPower',e.power)+
+    renderExtractField('Cylindrée','extCylinderCapacity',e.cylinderCapacity)+
+    renderExtractField('Mise en circulation','extFirstRegistration',e.firstRegistration)+
+    renderExtractField('Kilométrage','extMileage',e.mileage)+
+    renderExtractField('Immatriculation','extRegistration',e.registration)+
+    renderExtractField('VIN / numéro de série','extVin',e.vin)+
+    renderExtractField('Contrôle technique','extTechnicalInspection',e.technicalInspection)+
+    renderExtractField('Conditions','extConditions',e.conditions)+
+    renderExtractField('N° de devis','extQuoteNumber',e.quoteNumber)+
+    renderExtractField('Date du devis','extQuoteDate',e.quoteDate)+
+    renderExtractField('Motif / symptômes indiqués','extSymptoms',e.symptoms)+
+    '<div class="card"><b>Lignes du devis</b><p class="muted">Opérations et montants lisibles détectés.</p><div id="extracted-lines">'+(e.lines&&e.lines.length?e.lines.map(x=>`<div class="compact-row"><span>${escapeHtml(x.label)}</span><b>${escapeHtml(x.amount)}</b></div>`).join(''):'<span class="muted">Aucune ligne suffisamment lisible détectée.</span>')+'</div></div>'+ 
+    '<div class="card"><b>Totaux</b><div class="compact-row"><span>Total HT</span><b>'+escapeHtml(e.totals?.ht||'Non détecté')+'</b></div><div class="compact-row"><span>TVA</span><b>'+escapeHtml(e.totals?.vat||'Non détecté')+'</b></div><div class="compact-row"><span>Total TTC</span><b>'+escapeHtml(e.totals?.ttc||'Non détecté')+'</b></div></div>'+ 
+    '<details class="card"><summary><b>Texte OCR brut (diagnostic)</b></summary><pre style="white-space:pre-wrap;font-size:11px;color:#46586a">'+escapeHtml(window.rawOCRText||'')+'</pre></details>'+ 
+    '<div class="card" style="background:#fff7ed"><b>⚠️ À vérifier</b><p class="muted">Une information détectée automatiquement peut être corrigée avant validation. Auto Clair n’invente pas une donnée absente.</p></div>';
+}
+
+function validateExtraction(){
+  const e=window.documentExtraction||{};
+  const get=id=>document.getElementById(id)?.value.trim()||'';
+  e.customer=get('extCustomer');e.garage=get('extGarage');e.vehicle=get('extVehicle');e.engine=get('extEngine');e.power=get('extPower');e.cylinderCapacity=get('extCylinderCapacity');e.firstRegistration=get('extFirstRegistration');e.mileage=get('extMileage');e.registration=get('extRegistration');e.vin=get('extVin');e.technicalInspection=get('extTechnicalInspection');e.conditions=get('extConditions');e.quoteNumber=get('extQuoteNumber');e.quoteDate=get('extQuoteDate');e.symptoms=get('extSymptoms');
+  window.customDossier={id:'AC-CUSTOM',vehicle:e.vehicle||'Véhicule non détecté',year:e.year||'',mileage:e.mileage||'Kilométrage non détecté',problem:e.symptoms||'Motif non détecté',garage:e.garage||'Garage non détecté',quote:e.quoteNumber||'N° de devis non détecté',date:e.quoteDate||'Date non détectée',observations:'Données extraites du document puis vérifiées par l’utilisateur. Les informations non lisibles ou absentes ne sont pas inventées.',operations:[],tariff:[],globalRange:'Non disponible',tariffStatus:'orange',ht:0,vat:0,ttc:0,vehicleMeta:{engine:e.engine,power:e.power,cylinderCapacity:e.cylinderCapacity,firstRegistration:e.firstRegistration,registration:e.registration,vin:e.vin,technicalInspection:e.technicalInspection,conditions:e.conditions}};
+  activeKey=null;window.testSelection=window.customDossier;show('done');
+}
+
+function renderAdvisor(){
+ const d=dossier();const groups=d.operations.map(x=>x).reduce((a,x)=>{if(!a[x.status])a[x.status]=[];a[x.status].push(x);return a},{ });
+ const alertCount=d.operations.filter(x=>x.status!=='green').length;
+ const ordered=[...(groups.red||[]),...(groups.orange||[]),...(groups.green||[])];
+ document.getElementById('advisor-content').innerHTML=`<span class="badge orange">Analyse automatique · ${d.id}</span><h1>${d.vehicle}</h1><p class="muted"><b>${d.year}</b> · ${d.mileage}<br/>Motif : ${d.problem}</p><button class="secondary" onclick="show('quote')" style="width:100%">📄 Ouvrir le devis complet</button>
+ <div class="tech-section"><div class="section-label">🔧 TECHNIQUE</div><div class="client-problem"><div class="small muted">PROBLÈME DÉCRIT PAR LE CLIENT</div><b>« ${d.problem} »</b></div>
+ <div class="card" style="margin-top:12px"><div class="topbar"><b>⚠️ Points à vérifier</b><span class="badge ${alertCount?'orange':'green'}">${alertCount?alertCount+' point'+(alertCount>1?'s':''):'Aucun point'}</span></div>${ordered.slice(0,4).map(x=>`<div class="compact-row"><span>${statusMap[x.status].icon} ${x.title}</span><span>${x.status==='red'?'Sans lien apparent':x.status==='orange'?'À rapprocher':'Compatible'}</span></div>`).join('')}${alertCount?'<button class="primary" onclick="show(\'technicalDetails\')">Examiner les points signalés</button>':''}</div>
+ ${ordered.map(x=>x.status==='green'?`<div class="card greenline"><span class="badge green">🟢 Cohérent</span><h2>${x.title}</h2><button class="link" onclick="show('technicalDetails')">Voir le détail →</button></div>`:`<div class="card alert ${x.status==='red'?'redline':''}"><span class="badge ${statusMap[x.status].badge}">${statusMap[x.status].icon} ${statusMap[x.status].label}</span><h2>${x.title}</h2><p>${x.reason}</p><div class="source">Source : devis</div><button class="link" onclick="show('quote')">Vérifier dans le devis →</button></div>`).join('')}</div>
+ <div class="price-section"><div class="section-label">💶 TARIFAIRE</div><div class="card"><div class="topbar"><b>💶 Analyse tarifaire</b><span class="badge ${d.tariffStatus==='green'?'green':d.tariffStatus==='red'?'red':'orange'}">${statusMap[d.tariffStatus].icon} ${d.tariffStatus==='green'?'Tout est cohérent':d.tariffStatus==='red'?'Poste(s) au-dessus de la fourchette':'Poste(s) à vérifier'}</span></div><p class="muted">Comparaison indicative par poste. Les fourchettes ne constituent pas un tarif certifié.</p>
+ <div class="price-table"><div class="price-table-head"><span>Pièce / prestation</span><span>Montant</span><span style="text-align:right">Fourchette indicative</span><span></span></div>${d.tariff.map(x=>`<div class="price-table-row"><span class="item">${x[0]}</span><span class="qty">${money(x[1])}</span><span class="range">${x[2]}</span><span class="dot" style="background:${x[3]==='green'?'#55b94b':x[3]==='orange'?'#f2a900':'#e05252'}"></span></div>`).join('')}</div>
+ <div class="price-table-total"><b>Total devis</b><b>${money(d.ttc)} TTC</b></div><div style="margin-top:12px;padding:12px;border-radius:12px;background:#fff7ed"><div style="display:flex;justify-content:space-between"><b>Fourchette globale indicative</b><b>${d.globalRange}</b></div><div class="small muted" style="margin-top:7px">Le niveau tarifaire est calculé à partir des postes et des données de comparaison disponibles.</div></div></div></div>
+ <div class="card"><b>Principe Auto Clair</b><p class="muted">Une alerte est une observation, pas un verdict. Auto Clair ne certifie ni la pièce, ni le diagnostic, ni la nécessité de la réparation.</p></div><h2>Mon analyse</h2><textarea placeholder="Écris ou dicte ici ton analyse…"></textarea><button class="primary" onclick="show('final')">Valider mon analyse</button>`;
+}
+function renderTechnicalDetails(){const d=dossier();document.getElementById('technical-details-content').innerHTML=`<div class="card"><div class="small muted">PROBLÈME CLIENT</div><h2 style="margin-top:5px">« ${d.problem} »</h2><p class="muted">Auto Clair rapproche le symptôme, les opérations, les quantités et les éléments techniques disponibles. <b>« À rapprocher » ne signifie pas « injustifié ».</b></p></div>${d.operations.map(x=>`<div class="card"><span class="badge ${statusMap[x.status].badge}">${statusMap[x.status].icon} ${statusMap[x.status].label}</span><h2>${x.title}</h2><p>${x.reason}</p><div class="source">${x.qty} × ${x.label}${x.ref?' · réf. '+x.ref:''}</div></div>`).join('')}<div class="card"><h2>Limites</h2><p class="muted">Auto Clair ne remplace pas une expertise physique, ne fabrique pas une mesure absente et ne choisit pas une référence à la place du conseiller.</p></div>`}
+function renderQuote(){const d=dossier();document.getElementById('quote-content').innerHTML=`<b>${d.garage}</b><br/>Devis ${d.quote} — ${d.date}<br/><br/><b>${d.vehicle} — ${d.year} — ${d.mileage}</b><br/>Motif : ${d.problem}${d.operations.map(x=>`<div class="line"><span>${x.qty} × ${x.label}<br/>${x.ref||''}</span><b>${money(x.total)} HT</b></div>`).join('')}<br/><b>Sous-total HT : ${money(d.ht)}</b><br/>TVA 20 % : ${money(d.vat)}<br/><b>TOTAL TTC : ${money(d.ttc)}</b><br/><br/><span class="small muted">${d.observations}</span>`}
+function renderTestsPanel(){document.querySelectorAll('.test-btn').forEach(b=>b.classList.toggle('selected',b.dataset.k===activeKey));}
+function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');if(id==='advisor')renderAdvisor();if(id==='technicalDetails')renderTechnicalDetails();if(id==='quote')renderQuote();scrollTo(0,0)}
+renderTestsPanel();renderAdvisor();
+</script></body></html>
