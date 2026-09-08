@@ -1,4 +1,4 @@
-{"{
+{
   "name": "autoclair-vision",
   "version": "1.0.0",
   "type": "module",
@@ -11,4 +11,4 @@
     "openai": "^5.12.2",
     "sharp": "^0.34.3"
   }
-} server.js"},"dependencies":{"express":"^5.1.0"},"engines":{"node":">=20"}}
+}
