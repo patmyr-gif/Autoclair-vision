@@ -17,8 +17,6 @@ const upload = multer({
 const PORT = process.env.PORT || 10000;
 const MODEL = process.env.OPENAI_MODEL || "gpt-5.6-sol";
 
-app.use(express.static(path.join(__dirname, "public")));
-
 const boxSchema = {
   type: "object",
   additionalProperties: false,
@@ -396,6 +394,10 @@ Si impossible : found=false et coordonnées à 0.
   ], "autoclair_field_locator", locatorSchema);
 }
 
+app.get("/", (_req, res) =>
+  res.sendFile(path.join(__dirname, "index.html"))
+);
+
 app.post("/api/vision-analyze", upload.array("documents", 8), async (req, res) => {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -514,16 +516,14 @@ app.post("/api/vision-analyze", upload.array("documents", 8), async (req, res) =
   }
 });
 
+app.use("/public", express.static(path.join(__dirname, "public"), { index: false }));
+
 app.get("/health", (_req, res) => res.json({
   ok: true,
   model: MODEL,
   version: "V52",
   pipeline: "full-document-first"
 }));
-
-app.get("/", (_req, res) =>
-  res.sendFile(path.join(__dirname, "index.html"))
-);
 
 app.get("/{*splat}", (_req, res) =>
   res.sendFile(path.join(__dirname, "index.html"))
