@@ -521,8 +521,12 @@ app.get("/health", (_req, res) => res.json({
   pipeline: "full-document-first"
 }));
 
+app.get("/", (_req, res) =>
+  res.sendFile(path.join(__dirname, "index.html"))
+);
+
 app.get("/{*splat}", (_req, res) =>
-  res.sendFile(path.join(__dirname, "public", "index.html"))
+  res.sendFile(path.join(__dirname, "index.html"))
 );
 
 app.listen(PORT, () =>
