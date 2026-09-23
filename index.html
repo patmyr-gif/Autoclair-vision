@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Auto Clair V52 · Vision document</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:system-ui,-apple-system,sans-serif;color:#17202a}
+.app{max-width:520px;margin:auto;min-height:100vh;background:#fff}
+header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid #e3e6ea;padding:16px 18px}
+.logo{font-size:23px;font-weight:900}.sub{font-size:12px;color:#68717c;margin-top:2px}
+main{padding:18px}.card{border:1px solid #e0e4e8;border-radius:16px;padding:15px;margin:12px 0}
+h1{font-size:25px;margin:8px 0}h2{font-size:18px;margin:0 0 10px}.muted{color:#68717c}
+input[type=file]{width:100%;padding:12px;border:1px dashed #aeb7c1;border-radius:12px;background:#fafbfc}
+button{border:0;border-radius:12px;padding:13px 15px;font-weight:800;font-size:15px}
+.primary{width:100%;background:#17202a;color:#fff;margin-top:12px}.secondary{background:#eef1f4}
+button:disabled{opacity:.45}
+.hidden{display:none}.progress{margin-top:12px}.bar{height:9px;background:#e7eaee;border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:#17202a;transition:width .2s}
+.badge{display:inline-block;padding:5px 9px;border-radius:99px;font-size:12px;font-weight:800;background:#eef1f4}
+.green{background:#e2f5e6}.orange{background:#fff0d6}.red{background:#ffe0e0}
+.field{padding:10px 0;border-bottom:1px solid #edf0f2}.field:last-child{border:0}.label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#71808d;font-weight:800}.value{font-size:15px;margin-top:3px;word-break:break-word}.missing{color:#a06b00}
+.row{border-top:1px solid #e5e8eb;padding:12px 0}.row:first-child{border-top:0}.row-title{font-weight:800}.row-meta{font-size:12px;color:#68717c;margin-top:4px;line-height:1.45}
+.total{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #edf0f2}.total:last-child{border:0;font-size:18px;font-weight:900}
+.warning{border-left:4px solid #e0a11a;background:#fff9ed}.ok{border-left:4px solid #52ad5b}
+pre{white-space:pre-wrap;overflow:auto;font-size:11px;background:#f6f7f8;padding:10px;border-radius:10px}
+.small{font-size:12px}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div class="logo">AUTO CLAIR</div><div class="sub">V52 · Vision IA · lecture du document complet</div></header>
+<main>
+<section id="home">
+<h1>Lire un devis</h1>
+<p class="muted">Auto Clair analyse la photo complète du devis avant de structurer les informations. Pas d'OCR utilisé comme source principale.</p>
+<div class="card">
+<label><b>Photo(s) ou PDF du devis</b></label>
+<input id="files" type="file" accept="image/*,.pdf,application/pdf" multiple>
+<div id="fileInfo" class="small muted" style="margin-top:8px">Aucun document sélectionné.</div>
+<button id="go" class="primary" disabled>Analyser le devis</button>
+<div id="progress" class="progress hidden">
+<div id="progressText" class="small muted">Analyse en cours…</div>
+<div class="bar"><i id="bar"></i></div>
+</div>
+</div>
+<div class="card">
+<b>Principe V52</b>
+<p class="small muted">Photo complète → compréhension visuelle → JSON structuré → contrôle ciblé du VIN et de la motorisation si nécessaire.</p>
+</div>
+</section>
+
+<section id="result" class="hidden">
+<button id="back" class="secondary">← Nouveau document</button>
+<div id="resultContent"></div>
+</section>
+</main>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let selected=[];
+
+$("files").addEventListener("change",()=>{
+  selected=Array.from($("files").files||[]);
+  $("fileInfo").textContent=selected.length
+    ? selected.length+" document"+(selected.length>1?"s":"")+" sélectionné"+(selected.length>1?"s":"")
+    : "Aucun document sélectionné.";
+  $("go").disabled=!selected.length;
+});
+
+$("back").onclick=()=>{
+  $("result").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  $("files").value="";
+  selected=[];
+  $("go").disabled=true;
+  $("fileInfo").textContent="Aucun document sélectionné.";
+};
+
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
+function val(v){return v===null||v===undefined||v===""?'<span class="missing">Non trouvé</span>':esc(v);}
+function pct(v){return Math.round(Number(v||0)*100)+" %";}
+
+function field(label,v){return '<div class="field"><div class="label">'+esc(label)+'</div><div class="value">'+val(v)+'</div></div>';}
+
+function render(data){
+  const warnings=Array.isArray(data.warnings)?data.warnings:[];
+  const lines=Array.isArray(data.lines)?data.lines:[];
+  const v=data.vehicle||{}, c=data.customer||{}, r=data.repairer||{}, q=data.customerRequest||{}, t=data.totals||{}, o=data.otherInformation||{};
+  let html='';
+
+  html+='<div class="card '+(warnings.length?'warning':'ok')+'"><span class="badge '+(warnings.length?'orange':'green')+'">'+(warnings.length?'À vérifier':'Lecture terminée')+'</span><p class="small muted">'+esc(data.pipeline||"Vision IA")+'</p></div>';
+
+  html+='<div class="card"><h2>Client</h2>'+field("Nom",c.name)+field("Adresse",c.address)+field("Téléphone",c.phone)+field("E-mail",c.email)+'</div>';
+  html+='<div class="card"><h2>Garage / devis</h2>'+field("Réparateur",r.name)+field("Adresse",r.address)+field("Téléphone",r.phone)+field("N° de devis",r.quoteNumber)+field("Date du devis",r.quoteDate)+'</div>';
+  html+='<div class="card"><h2>Véhicule</h2>'+
+    field("Marque",v.make)+field("Modèle",v.model)+field("Version",v.version)+field("Motorisation",v.engine)+
+    field("Carburant",v.fuel)+field("Puissance",v.powerCh)+field("Puissance kW",v.powerKW)+field("Cylindrée",v.cylinderCapacity)+
+    field("1ère mise en circulation",v.firstRegistration)+field("Année",v.year)+field("Immatriculation",v.registration)+
+    field("VIN / N° de série",v.vin)+field("Kilométrage",v.mileage)+'</div>';
+
+  html+='<div class="card"><h2>Demande client</h2>'+field("Motif",q.reason)+field("Symptômes",q.symptoms)+field("Observations",q.observations)+'</div>';
+
+  html+='<div class="card"><h2>Lignes du devis <span class="small muted">('+lines.length+')</span></h2>';
+  if(lines.length){
+    lines.forEach((x,i)=>{
+      html+='<div class="row"><div class="row-title">'+(i+1)+'. '+esc(x.description)+'</div>'+
+      '<div class="row-meta">Catégorie : '+esc(x.category||"autre")+
+      (x.quantity!==null&&x.quantity!==undefined?' · Qté : '+esc(x.quantity):"")+
+      (x.reference?' · Réf. : '+esc(x.reference):"")+
+      (x.unitPriceHT?' · PU HT : '+esc(x.unitPriceHT):"")+
+      (x.discount?' · Remise : '+esc(x.discount):"")+
+      (x.amountHT?' · HT : '+esc(x.amountHT):"")+
+      (x.vatRate?' · TVA : '+esc(x.vatRate):"")+
+      (x.amountTTC?' · TTC : '+esc(x.amountTTC):"")+'</div></div>';
+    });
+  } else html+='<p class="muted">Aucune ligne suffisamment lisible.</p>';
+  html+='</div>';
+
+  html+='<div class="card"><h2>Totaux</h2>'+
+    '<div class="total"><span>Total HT</span><span>'+val(t.totalHT)+'</span></div>'+
+    '<div class="total"><span>TVA</span><span>'+val(t.vat)+'</span></div>'+
+    '<div class="total"><span>Total TTC</span><span>'+val(t.totalTTC)+'</span></div>'+
+    (t.partsHT?'<div class="total"><span>Pièces HT</span><span>'+esc(t.partsHT)+'</span></div>':"")+
+    (t.laborHT?'<div class="total"><span>Main-d’œuvre HT</span><span>'+esc(t.laborHT)+'</span></div>':"")+
+    (t.otherHT?'<div class="total"><span>Autres HT</span><span>'+esc(t.otherHT)+'</span></div>':"")+
+    '</div>';
+
+  html+='<div class="card"><h2>Autres informations</h2>'+field("Contrôle technique",o.technicalInspection)+field("Conditions",o.conditions)+field("Garanties",o.guarantees)+field("Notes",o.notes)+'</div>';
+
+  html+='<div class="card"><h2>Confiance de lecture</h2>'+
+    '<div class="total"><span>Globale</span><span>'+pct(data.confidence?.overall)+'</span></div>'+
+    '<div class="total"><span>VIN</span><span>'+pct(data.confidence?.vin)+'</span></div>'+
+    '<div class="total"><span>Motorisation</span><span>'+pct(data.confidence?.engine)+'</span></div>'+
+    '<div class="total"><span>Lignes</span><span>'+pct(data.confidence?.lines)+'</span></div>'+
+    '<div class="total"><span>Totaux</span><span>'+pct(data.confidence?.totals)+'</span></div></div>';
+
+  if(warnings.length){
+    html+='<div class="card warning"><h2>⚠️ À vérifier</h2>'+warnings.map(w=>'<p class="small">'+esc(w)+'</p>').join('')+'</div>';
+  }
+
+  html+='<details class="card"><summary><b>JSON technique</b></summary><pre>'+esc(JSON.stringify(data,null,2))+'</pre></details>';
+  $("resultContent").innerHTML=html;
+}
+
+$("go").onclick=async()=>{
+  if(!selected.length)return;
+  $("go").disabled=true;
+  $("progress").classList.remove("hidden");
+  $("progressText").textContent="Envoi de la photo complète à Vision IA…";
+  $("bar").style.width="25%";
+
+  try{
+    const form=new FormData();
+    selected.forEach(f=>form.append("documents",f,f.name));
+
+    $("progressText").textContent="Compréhension du document…";
+    $("bar").style.width="50%";
+
+    const r=await fetch("/api/vision-analyze",{method:"POST",body:form});
+    const data=await r.json();
+    if(!r.ok)throw new Error(data.error||"Erreur Vision IA");
+
+    $("bar").style.width="100%";
+    $("progressText").textContent="Lecture terminée.";
+    render(data);
+    $("home").classList.add("hidden");
+    $("result").classList.remove("hidden");
+  }catch(e){
+    alert(e.message||"Erreur pendant l'analyse.");
+  }finally{
+    $("go").disabled=!selected.length;
+  }
+};
+</script>
+</body>
+</html>
